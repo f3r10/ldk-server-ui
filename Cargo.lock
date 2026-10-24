@@ -1122,6 +1122,7 @@ dependencies = [
  "api",
  "axum",
  "ldk-server-client",
+ "prost",
  "tokio",
 ]
 
