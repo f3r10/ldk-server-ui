@@ -8,4 +8,6 @@ license.workspace = true
 
 [dependencies]
 api = { workspace = true }
+axum = "0.8"
 ldk-server-client = { workspace = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
