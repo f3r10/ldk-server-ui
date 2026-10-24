@@ -1,0 +1,10 @@
+[package]
+name = "web"
+description = "Browser front end (Rust/WASM)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+api = { workspace = true }

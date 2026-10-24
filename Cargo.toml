@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = ["crates/api", "crates/alerts", "crates/notify", "crates/sidecar", "crates/web"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/f3r10/ldk-server-ui"
+
+# ldk-server crates, pinned to one upstream commit. The ldk-server node you
+# connect to must speak the same protobuf API, so bump this rev deliberately
+# and together with the server (see README, "Development environment").
+[workspace.dependencies]
+ldk-server-grpc = { git = "https://github.com/lightningdevkit/ldk-server", rev = "c17dc11dde38f88c53457039ddf30c6b90a63ba2", default-features = false }
+ldk-server-client = { git = "https://github.com/lightningdevkit/ldk-server", rev = "c17dc11dde38f88c53457039ddf30c6b90a63ba2" }
+ldk-server-macaroons = { git = "https://github.com/lightningdevkit/ldk-server", rev = "c17dc11dde38f88c53457039ddf30c6b90a63ba2" }
+
+api = { path = "crates/api" }
+alerts = { path = "crates/alerts" }
+notify = { path = "crates/notify" }

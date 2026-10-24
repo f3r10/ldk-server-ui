@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain, components and wasm target pinned in
+      # rust-toolchain.toml. (`rustup show` no longer installs, since rustup 1.28.)
+      - run: rustup toolchain install
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets
+      - run: cargo test --workspace
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install
+      # Crates that must build for the browser.
+      - run: cargo check --target wasm32-unknown-unknown -p api -p alerts -p web

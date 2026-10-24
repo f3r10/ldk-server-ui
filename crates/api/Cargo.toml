@@ -1,0 +1,10 @@
+[package]
+name = "api"
+description = "Wire types shared by the sidecar and the web front end."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+ldk-server-grpc = { workspace = true }
