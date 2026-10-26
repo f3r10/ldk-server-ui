@@ -8,6 +8,8 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use ldk_server_client::error::LdkServerError;
+use ldk_server_client::error::LdkServerErrorCode;
+use prost::Message;
 
 use crate::node::NodeApi;
 
@@ -25,21 +27,36 @@ async fn health() -> impl IntoResponse {
 
 /// The node's `GetNodeInfoResponse`, protobuf-encoded.
 async fn node_info<N: NodeApi>(State(node): State<Arc<N>>) -> Response {
-	let _ = node;
-	todo!()
+	match node.node_info().await {
+		Ok(get_node_info_response) => {
+			let enc = get_node_info_response.encode_to_vec();
+			(StatusCode::OK, [(axum::http::header::CONTENT_TYPE, "application/x-protobuf")], enc)
+				.into_response()
+		},
+		Err(error) => {
+			let status_code = error_status(&error);
+			(status_code, error.message).into_response()
+		},
+	}
 }
 
 /// The HTTP status the browser sees for an ldk-server error.
-#[cfg_attr(not(test), expect(dead_code, reason = "not called until node_info is implemented"))]
 fn error_status(error: &LdkServerError) -> StatusCode {
-	let _ = error;
-	todo!()
+	match error.error_code {
+		LdkServerErrorCode::InvalidRequestError => StatusCode::BAD_REQUEST,
+		LdkServerErrorCode::AuthError => StatusCode::BAD_GATEWAY,
+		LdkServerErrorCode::AuthorizationError => StatusCode::FORBIDDEN,
+		LdkServerErrorCode::LightningError => StatusCode::UNPROCESSABLE_ENTITY,
+		LdkServerErrorCode::InternalServerError => StatusCode::BAD_GATEWAY,
+		LdkServerErrorCode::InternalError => StatusCode::BAD_GATEWAY,
+	}
 }
 
 #[cfg(test)]
 mod tests {
 	use ldk_server_client::error::LdkServerErrorCode;
 	use ldk_server_client::ldk_server_grpc::api::GetNodeInfoResponse;
+	use prost::Message;
 
 	use super::*;
 
@@ -57,7 +74,6 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore = "error_status is not implemented yet"]
 	fn error_status_mapping() {
 		let cases = [
 			// The browser's request was malformed.
@@ -79,7 +95,6 @@ mod tests {
 	}
 
 	#[tokio::test]
-	#[ignore = "node_info is not implemented yet"]
 	async fn node_info_error_returns_mapped_status_and_message() {
 		let node = Arc::new(FakeNode(Err(error(LdkServerErrorCode::AuthError))));
 
@@ -87,6 +102,19 @@ mod tests {
 
 		assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
 		let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
-		assert!(String::from_utf8_lossy(&body).contains("test error"));
+		assert_eq!(body, "test error");
+	}
+
+	#[tokio::test]
+	async fn node_info_success() {
+		let expected = GetNodeInfoResponse { node_id: "03ab".into(), ..Default::default() };
+		let node = Arc::new(FakeNode(Ok(expected.clone())));
+
+		let response = node_info(State(node)).await;
+
+		assert_eq!(response.status(), StatusCode::OK);
+		assert_eq!(response.headers()[axum::http::header::CONTENT_TYPE], "application/x-protobuf");
+		let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+		assert_eq!(GetNodeInfoResponse::decode(body).unwrap(), expected);
 	}
 }

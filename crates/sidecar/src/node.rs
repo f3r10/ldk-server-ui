@@ -8,7 +8,6 @@ use ldk_server_client::ldk_server_grpc::api::{GetNodeInfoRequest, GetNodeInfoRes
 
 /// The subset of ldk-server the sidecar uses. Grows one method per proxied RPC.
 pub trait NodeApi: Send + Sync + 'static {
-	#[expect(dead_code, reason = "not called until routes::node_info is implemented")]
 	fn node_info(&self)
 		-> impl Future<Output = Result<GetNodeInfoResponse, LdkServerError>> + Send;
 }
